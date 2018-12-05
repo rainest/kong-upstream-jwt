@@ -58,19 +58,29 @@ local function encode_token(data, key)
 end
 
 local function add_jwt_header(conf)
-  local kong_pkey = getKongKey("pkey", private_key_location)
-  ngx.req.read_body()
-  local req_body  = ngx.req.get_body_data()
-  local digest_created = ""
-  if req_body ~= nil then
-    local sha256 = resty_sha256:new()
-    sha256:update(req_body)
-    digest_created = sha256:final()
-  end
+  -- -- this is the original body generation code, which uses a digest of the request itself
+  -- -- will need to add a switch case if maintaining original plugin functionality
+  -- local kong_pkey = getKongKey("pkey", private_key_location)
+  -- ngx.req.read_body()
+  -- local req_body  = ngx.req.get_body_data()
+  -- local digest_created = ""
+  -- if req_body ~= nil then
+  --   local sha256 = resty_sha256:new()
+  --   sha256:update(req_body)
+  --   digest_created = sha256:final()
+  -- end
+
+  -- local payload = {
+  --       payloadhash = str.to_hex(digest_created),
+  --       exp = ngx.time() + 60 --much better performance improvement over os.time()
+  -- }
 
   local payload = {
-        payloadhash = str.to_hex(digest_created),
-	exp = ngx.time() + 60 --much better performance improvement over os.time()
+      exp = ngx.time() + 60,
+      iss = "http://example.com/fake-jwt-issuer",
+      aud = "http://example.com/fake-jwt-audience",
+      nbf = ngx.time(),
+      jti = "not a uuid"
   }
 		
   local jwt = encode_token(payload, kong_pkey)
