@@ -76,10 +76,10 @@ local function add_jwt_header(conf)
   -- }
 
   local payload = {
-      exp = ngx.time() + 60,
-      iss = "http://example.com/fake-jwt-issuer",
-      aud = "http://example.com/fake-jwt-audience",
-      nbf = ngx.time(),
+      exp = ngx.time() + conf.expiry,
+      iss = conf.issuer,
+      aud = conf.audience,
+      nbf = ngx.time() + conf.not_before,
       jti = "not a uuid"
   }
 		
