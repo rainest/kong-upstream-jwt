@@ -11,6 +11,7 @@ local openssl_digest = require "openssl.digest"
 local openssl_pkey = require "openssl.pkey"
 local table_concat = table.concat
 local encode_base64 = ngx.encode_base64
+local jwt = require "resty.jwt"
 local _M = {}
 
 --- base 64 encoding
@@ -46,21 +47,28 @@ local function getKongKey(key, location)
 end
 
 local function encode_token(data, key)
-  local header = {typ = "JWT", alg = "RS256", x5c = {b64_encode(getKongKey("pubder",public_key_der_location))} }
-  local segments = {
-    b64_encode(json.encode(header)),
-    b64_encode(json.encode(data))
-  }
-  local signing_input = table_concat(segments, ".")
-  local signature = openssl_pkey.new(key):sign(openssl_digest.new("sha256"):update(signing_input))
-  segments[#segments+1] = b64_encode(signature)
-  return table_concat(segments, ".")
+--  -- local header = {typ = "JWT", alg = "RS256", x5c = {b64_encode(getKongKey("pubder",public_key_der_location))} }
+  local header = {typ = "JWT", alg = "RS256"}
+  --header = {typ = "JWT", alg = "HS256"}
+  matter = {}
+  matter["header"] = header
+  matter["payload"] = data
+--  local segments = {
+--    b64_encode(json.encode(header)),
+--    b64_encode(json.encode(data))
+--  }
+  local token = jwt:sign(key, matter)
+--  local signing_input = table_concat(segments, ".")
+--  local signature = openssl_pkey.new(key):sign(openssl_digest.new("sha256"):update(signing_input))
+--  segments[#segments+1] = b64_encode(signature)
+----  return table_concat(segments, ".")
+  return token
 end
 
 local function add_jwt_header(conf)
   -- -- this is the original body generation code, which uses a digest of the request itself
   -- -- will need to add a switch case if maintaining original plugin functionality
-  -- local kong_pkey = getKongKey("pkey", private_key_location)
+  local kong_pkey = getKongKey("pkey", private_key_location)
   -- ngx.req.read_body()
   -- local req_body  = ngx.req.get_body_data()
   -- local digest_created = ""
