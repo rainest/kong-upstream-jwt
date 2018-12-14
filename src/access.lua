@@ -2,8 +2,9 @@
 local resty_sha256 = require "resty.sha256"
 local str = require "resty.string"
 local singletons = require "kong.singletons"
-local public_key_der_location =  os.getenv("KONG_SSL_CERT_DER")
-local private_key_location =  os.getenv("KONG_SSL_CERT_KEY")
+-- These will now be retrieved later from a location with access to config
+--local public_key_der_location =  os.getenv("KONG_SSL_CERT_DER")
+--local private_key_location =  os.getenv("KONG_SSL_CERT_KEY")
 local pl_file = require "pl.file"
 local json = require "cjson"
 local utils = require "kong.tools.utils"
@@ -93,7 +94,7 @@ local function add_jwt_header(conf)
 
   -- -- this is the original body generation code, which uses a digest of the request itself
   -- -- will need to add a switch case if maintaining original plugin functionality
-  local kong_pkey = getKongKey("pkey", private_key_location)
+  local kong_pkey = getKongKey("pkey", conf.private_key_location)
   -- ngx.req.read_body()
   -- local req_body  = ngx.req.get_body_data()
   -- local digest_created = ""

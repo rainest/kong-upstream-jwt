@@ -6,6 +6,7 @@ return {
     expiry = { type = "number"},
     not_before = { type = "number"},
     issuer = { type = "string"},
-    audience = { type = "string"}
+    audience = { type = "string"},
+    private_key_location = { type = "string"}
   }
 }
