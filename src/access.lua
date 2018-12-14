@@ -114,7 +114,7 @@ local function add_jwt_header(conf)
       iss = conf.issuer,
       aud = conf.audience,
       nbf = ngx.time() + conf.not_before,
-      jti = "not a uuid"
+      jti = utils.uuid()
   }
 		
   local jwt = encode_token(payload, kong_pkey)
