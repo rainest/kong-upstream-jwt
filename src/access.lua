@@ -84,13 +84,13 @@ local function encode_token(data, key)
 end
 
 local function add_jwt_header(conf)
-  local key = id_lookup[conf.identifier]()
+  --local key = id_lookup[conf.identifier]()
 
-  -- legacy logic, if authenticated consumer or credential is not found
-  -- use the IP
-  if not key then
-    key = id_lookup["ip"]()
-  end
+  ---- legacy logic, if authenticated consumer or credential is not found
+  ---- use the IP
+  --if not key then
+  --  key = id_lookup["ip"]()
+  --end
 
   -- -- this is the original body generation code, which uses a digest of the request itself
   -- -- will need to add a switch case if maintaining original plugin functionality
