@@ -119,7 +119,7 @@ local function add_jwt_header(conf)
   }
 		
   local jwt = encode_token(payload, kong_pkey)
-  ngx.req.set_header("JWT", jwt)
+  ngx.req.set_header(conf.upstream_jwt_header, jwt)
 end
 
 function _M.execute(conf)
