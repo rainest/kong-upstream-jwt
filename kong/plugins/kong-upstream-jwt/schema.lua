@@ -7,6 +7,8 @@ return {
     not_before = { type = "number"},
     issuer = { type = "string"},
     audience = { type = "string"},
+    subject = { type = "string"},
+    upstream_jwt_header = { type = "string"},
     private_key_location = { type = "string"}
   }
 }
