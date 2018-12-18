@@ -34,19 +34,6 @@ local function readFromFile(file_location)
   return content
 end
 
-local function getKongKey(key, location)
-  -- This will add a non expiring TTL on this cached value
-  -- https://github.com/thibaultcha/lua-resty-mlcache/blob/master/README.md
-  local pkey, err = singletons.cache:get(key, { ttl = 0 }, readFromFile, location)
-	
-  if err then
-    ngx.log(ngx.ERR, "Could not retrieve pkey: ", err)
-    return
-  end
-	
-  return pkey
-end
-
 local function encode_token(data, key)
 --  -- local header = {typ = "JWT", alg = "RS256", x5c = {b64_encode(getKongKey("pubder",public_key_der_location))} }
   local header = {typ = "JWT", alg = "RS256"}
@@ -66,10 +53,54 @@ local function encode_token(data, key)
   return token
 end
 
+local function getKongKey(key, location)
+  -- This will add a non expiring TTL on this cached value
+  -- https://github.com/thibaultcha/lua-resty-mlcache/blob/master/README.md
+  local pkey, err = singletons.cache:get(key, { ttl = 0 }, readFromFile, location)
+
+  if err then
+    ngx.log(ngx.ERR, "Could not retrieve pkey: ", err)
+    return
+  end
+
+  return pkey
+end
+
+local function generateToken(keypath, conf)
+  -- Earlier implementations used a static cache key as only one certificate
+  -- was used. There can be more than one now, and using the file path seems
+  -- simplest. Using the same arg twice as getKongKey hasn't been refactored.
+  local kong_pkey, err = getKongKey(keypath, keypath)
+  if not kong_pkey then
+    return nil, err
+  end
+
+  local payload = {
+      exp = ngx.time() + conf.expiry,
+      iss = conf.issuer,
+      aud = conf.audience,
+      sub = conf.subject,
+      nbf = ngx.time() + conf.not_before,
+      jti = utils.uuid()
+  }
+
+  return encode_token(payload, kong_pkey)
+end
+
+local function getToken(keypath, conf)
+  local token, err = singletons.cache:get(keypath .. ":token", { ttl = conf.expiry }, generateToken, keypath, conf)
+
+  if err then
+    ngx.log(ngx.ERR, "Failed to retrieve or generate token: ", err)
+    return nil, err
+  end
+
+  return token
+end
+
 local function add_jwt_header(conf)
   -- -- this is the original body generation code, which uses a digest of the request itself
   -- -- will need to add a switch case if maintaining original plugin functionality
-  local kong_pkey = getKongKey("pkey", conf.private_key_location)
   -- ngx.req.read_body()
   -- local req_body  = ngx.req.get_body_data()
   -- local digest_created = ""
@@ -92,8 +123,8 @@ local function add_jwt_header(conf)
       nbf = ngx.time() + conf.not_before,
       jti = utils.uuid()
   }
-		
-  local jwt = encode_token(payload, kong_pkey)
+
+  local jwt = getToken(conf.private_key_location, conf)
   ngx.req.set_header(conf.upstream_jwt_header, jwt)
 end
 
