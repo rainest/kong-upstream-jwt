@@ -113,6 +113,7 @@ local function add_jwt_header(conf)
       exp = ngx.time() + conf.expiry,
       iss = conf.issuer,
       aud = conf.audience,
+      sub = conf.subject,
       nbf = ngx.time() + conf.not_before,
       jti = utils.uuid()
   }
