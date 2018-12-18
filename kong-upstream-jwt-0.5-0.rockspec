@@ -12,7 +12,7 @@ description = {
    homepage = "https://github.com/rainest/kong-upstream-jwt",
    license = "Apache 2.0"
 }
-dependencies = {}
+dependencies = {  "lua-resty-jwt == 0.2.0" }
 build = {
    type = "builtin",
    modules = {
