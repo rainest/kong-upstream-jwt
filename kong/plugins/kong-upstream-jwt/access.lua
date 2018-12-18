@@ -15,23 +15,6 @@ local encode_base64 = ngx.encode_base64
 local jwt = require "resty.jwt"
 local _M = {}
 
-local id_lookup = {
-  ip = function()
-    return ngx.var.remote_addr
-  end,
-  credential = function()
-    return ngx.ctx.authenticated_credential and
-           ngx.ctx.authenticated_credential.id
-  end,
-  consumer = function()
-    -- try the consumer, fall back to credential
-    return ngx.ctx.authenticated_consumer and
-           ngx.ctx.authenticated_consumer.id or
-           ngx.ctx.authenticated_credential and
-           ngx.ctx.authenticated_credential.id
-  end
-}
-
 --- base 64 encoding
 -- @param input String to base64 encode
 -- @return Base64 encoded string
@@ -84,14 +67,6 @@ local function encode_token(data, key)
 end
 
 local function add_jwt_header(conf)
-  --local key = id_lookup[conf.identifier]()
-
-  ---- legacy logic, if authenticated consumer or credential is not found
-  ---- use the IP
-  --if not key then
-  --  key = id_lookup["ip"]()
-  --end
-
   -- -- this is the original body generation code, which uses a digest of the request itself
   -- -- will need to add a switch case if maintaining original plugin functionality
   local kong_pkey = getKongKey("pkey", conf.private_key_location)
