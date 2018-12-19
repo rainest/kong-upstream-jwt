@@ -67,9 +67,6 @@ local function getKongKey(key, location)
 end
 
 local function generateToken(keypath, conf)
-  -- Earlier implementations used a static cache key as only one certificate
-  -- was used. There can be more than one now, and using the file path seems
-  -- simplest. Using the same arg twice as getKongKey hasn't been refactored.
   local kong_pkey, err = getKongKey(keypath, keypath)
   if not kong_pkey then
     return nil, err
@@ -88,7 +85,8 @@ local function generateToken(keypath, conf)
 end
 
 local function getToken(keypath, conf)
-  local token, err = singletons.cache:get(keypath .. ":token", { ttl = conf.expiry }, generateToken, keypath, conf)
+  local identifier = conf.expiry .. conf.not_before .. conf.issuer .. conf.audience .. conf.subject .. conf.upstream_jwt_header .. conf.private_key_location
+  local token, err = singletons.cache:get(identifier, { ttl = conf.expiry }, generateToken, keypath, conf)
 
   if err then
     ngx.log(ngx.ERR, "Failed to retrieve or generate token: ", err)
