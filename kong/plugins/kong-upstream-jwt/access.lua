@@ -15,6 +15,13 @@ local encode_base64 = ngx.encode_base64
 local jwt = require "resty.jwt"
 local _M = {}
 
+-- Arbitrary constant subtracted from JWTs' cache TTLs (in seconds). Because
+-- JWT generation and caching is not atomic, JWTs' exp claim will be a
+-- timestamp slightly before the time JWTs will expire from cache, so it's
+-- necessary cache JWTs for a shorter time than their expiry configuration
+-- would suggest.
+local JWT_TTL_GRACE_PERIOD = 30
+
 --- base 64 encoding
 -- @param input String to base64 encode
 -- @return Base64 encoded string
@@ -86,7 +93,7 @@ end
 
 local function getToken(keypath, conf)
   local identifier = conf.expiry .. conf.not_before .. conf.issuer .. conf.audience .. conf.subject .. conf.upstream_jwt_header .. conf.private_key_location
-  local token, err = singletons.cache:get(identifier, { ttl = conf.expiry }, generateToken, keypath, conf)
+  local token, err = singletons.cache:get(identifier, { ttl = conf.expiry - JWT_TTL_GRACE_PERIOD}, generateToken, keypath, conf)
 
   if err then
     ngx.log(ngx.ERR, "Failed to retrieve or generate token: ", err)
