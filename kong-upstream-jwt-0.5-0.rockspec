@@ -1,7 +1,8 @@
 package = "kong-upstream-jwt"
 version = "0.5-0"
 source = {
-   url = "git+https://github.com/rainest/kong-upstream-jwt.git"
+   url = "git+https://github.com/rainest/kong-upstream-jwt.git",
+   tag = "0.5-0"
 }
 description = {
    summary = "A plugin for Kong which adds a signed JWT to HTTP Headers of outgoing requests",
