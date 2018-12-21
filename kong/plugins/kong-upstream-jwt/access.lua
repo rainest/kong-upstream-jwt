@@ -2,9 +2,6 @@
 local resty_sha256 = require "resty.sha256"
 local str = require "resty.string"
 local singletons = require "kong.singletons"
--- These will now be retrieved later from a location with access to config
---local public_key_der_location =  os.getenv("KONG_SSL_CERT_DER")
---local private_key_location =  os.getenv("KONG_SSL_CERT_KEY")
 local pl_file = require "pl.file"
 local json = require "cjson"
 local utils = require "kong.tools.utils"
@@ -42,21 +39,11 @@ local function readFromFile(file_location)
 end
 
 local function encode_token(data, key)
---  -- local header = {typ = "JWT", alg = "RS256", x5c = {b64_encode(getKongKey("pubder",public_key_der_location))} }
   local header = {typ = "JWT", alg = "RS256"}
-  --header = {typ = "JWT", alg = "HS256"}
   matter = {}
   matter["header"] = header
   matter["payload"] = data
---  local segments = {
---    b64_encode(json.encode(header)),
---    b64_encode(json.encode(data))
---  }
   local token = jwt:sign(key, matter)
---  local signing_input = table_concat(segments, ".")
---  local signature = openssl_pkey.new(key):sign(openssl_digest.new("sha256"):update(signing_input))
---  segments[#segments+1] = b64_encode(signature)
-----  return table_concat(segments, ".")
   return token
 end
 
@@ -104,22 +91,6 @@ local function getToken(keypath, conf)
 end
 
 local function add_jwt_header(conf)
-  -- -- this is the original body generation code, which uses a digest of the request itself
-  -- -- will need to add a switch case if maintaining original plugin functionality
-  -- ngx.req.read_body()
-  -- local req_body  = ngx.req.get_body_data()
-  -- local digest_created = ""
-  -- if req_body ~= nil then
-  --   local sha256 = resty_sha256:new()
-  --   sha256:update(req_body)
-  --   digest_created = sha256:final()
-  -- end
-
-  -- local payload = {
-  --       payloadhash = str.to_hex(digest_created),
-  --       exp = ngx.time() + 60 --much better performance improvement over os.time()
-  -- }
-
   local payload = {
       exp = ngx.time() + conf.expiry,
       iss = conf.issuer,
