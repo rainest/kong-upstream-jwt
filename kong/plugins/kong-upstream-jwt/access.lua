@@ -64,8 +64,7 @@ end
 
 local function getToken(keypath, conf)
   local identifier = conf.expiry .. conf.not_before .. conf.issuer ..
-      conf.audience .. conf.subject .. conf.upstream_jwt_header ..
-      conf.private_key_location
+      conf.audience .. conf.subject .. conf.private_key_location
   local token, err = singletons.cache:get(identifier,
       { ttl = conf.expiry - JWT_TTL_GRACE_PERIOD}, generateToken, keypath, conf)
 
@@ -79,6 +78,11 @@ end
 
 local function add_jwt_header(conf)
   local token = getToken(conf.private_key_location, conf)
+
+  if conf.upstream_jwt_header == "Authorization" then
+    token = "Bearer " .. token
+  end
+
   ngx.req.set_header(conf.upstream_jwt_header, token)
 end
 
