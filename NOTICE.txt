@@ -1,5 +1,6 @@
 Kong Upstream JWT Plugin
 Copyright 2018 Optum
+Copyright 2018 Kong Inc
 
 Project Description:
 ====================
@@ -12,6 +13,7 @@ The Kong Upstream JWT Plugin is a small, lua-based, Openrestly nginx module whic
 Authors:
 Ross Sbriscia, ©Optum 2018
 Jeremy Justus, ©Optum 2018
+Travis Raines, ©Kong Inc 2018
 
 Added Files:
 ============
