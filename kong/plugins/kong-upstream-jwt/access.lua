@@ -1,14 +1,7 @@
 -- © Optum 2018
-local resty_sha256 = require "resty.sha256"
-local str = require "resty.string"
 local singletons = require "kong.singletons"
 local pl_file = require "pl.file"
-local json = require "cjson"
 local utils = require "kong.tools.utils"
-local openssl_digest = require "openssl.digest"
-local openssl_pkey = require "openssl.pkey"
-local table_concat = table.concat
-local encode_base64 = ngx.encode_base64
 local jwt = require "resty.jwt"
 local _M = {}
 
@@ -18,15 +11,6 @@ local _M = {}
 -- necessary cache JWTs for a shorter time than their expiry configuration
 -- would suggest.
 local JWT_TTL_GRACE_PERIOD = 30
-
---- base 64 encoding
--- @param input String to base64 encode
--- @return Base64 encoded string
-local function b64_encode(input)
-  local result = encode_base64(input)
-  result = result:gsub("+", "-"):gsub("/", "_"):gsub("=", "")
-  return result
-end
 
 local function readFromFile(file_location)
   local content, err = pl_file.read(file_location)
@@ -40,7 +24,7 @@ end
 
 local function encode_token(data, key)
   local header = {typ = "JWT", alg = "RS256"}
-  matter = {}
+  local matter = {}
   matter["header"] = header
   matter["payload"] = data
   local token = jwt:sign(key, matter)
@@ -79,8 +63,11 @@ local function generateToken(keypath, conf)
 end
 
 local function getToken(keypath, conf)
-  local identifier = conf.expiry .. conf.not_before .. conf.issuer .. conf.audience .. conf.subject .. conf.upstream_jwt_header .. conf.private_key_location
-  local token, err = singletons.cache:get(identifier, { ttl = conf.expiry - JWT_TTL_GRACE_PERIOD}, generateToken, keypath, conf)
+  local identifier = conf.expiry .. conf.not_before .. conf.issuer ..
+      conf.audience .. conf.subject .. conf.upstream_jwt_header ..
+      conf.private_key_location
+  local token, err = singletons.cache:get(identifier,
+      { ttl = conf.expiry - JWT_TTL_GRACE_PERIOD}, generateToken, keypath, conf)
 
   if err then
     ngx.log(ngx.ERR, "Failed to retrieve or generate token: ", err)
@@ -91,17 +78,8 @@ local function getToken(keypath, conf)
 end
 
 local function add_jwt_header(conf)
-  local payload = {
-      exp = ngx.time() + conf.expiry,
-      iss = conf.issuer,
-      aud = conf.audience,
-      sub = conf.subject,
-      nbf = ngx.time() + conf.not_before,
-      jti = utils.uuid()
-  }
-
-  local jwt = getToken(conf.private_key_location, conf)
-  ngx.req.set_header(conf.upstream_jwt_header, jwt)
+  local token = getToken(conf.private_key_location, conf)
+  ngx.req.set_header(conf.upstream_jwt_header, token)
 end
 
 function _M.execute(conf)
